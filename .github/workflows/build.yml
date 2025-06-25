@@ -13,7 +13,7 @@ jobs:
             os: windows-latest,
             toolchain: vc2022,
             toolversion: vs170,
-            cmakeprofile: "Visual Studio 17 2022" -A Win32,
+            cmakeprofile: "\"Visual Studio 17 2022\" -A Win32",
             arch: x86
           }
         - {
@@ -21,7 +21,7 @@ jobs:
             os: windows-latest,
             toolchain: vc2022,
             toolversion: vs170,
-            cmakeprofile: "Visual Studio 17 2022" -A x64,
+            cmakeprofile: "\"Visual Studio 17 2022\" -A x64",
             arch: x64
           }
         - {
@@ -29,7 +29,7 @@ jobs:
             os: windows-latest,
             toolchain: mingw32,
             toolversion: mingw32,
-            cmakeprofile: "MinGW Makefiles",
+            cmakeprofile: "\"MinGW Makefiles\"",
             arch: x86
           }
         - {
@@ -37,7 +37,7 @@ jobs:
             os: windows-latest,
             toolchain: mingw64,
             toolversion: mingw64,
-            cmakeprofile: "MinGW Makefiles",
+            cmakeprofile: "\"MinGW Makefiles\"",
             arch: x64
           }
 
@@ -88,5 +88,3 @@ jobs:
         path: |
           build/*.dll*
           build/*.exe
-
-
