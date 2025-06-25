@@ -18,10 +18,9 @@ broken(int condition)
 }
 
 #define START_TEST(__name) \
-static const char test_name[] = { #__name }; \
+const char *wine_test_name = #__name; \
 void test_main(void)
 
-static const char test_name[];
 static void test_main(void);
 
 static int winetest_debug = 1;
@@ -53,6 +52,7 @@ winetest_elapsed(char *buffer)
 int
 main(int argc, char **argv)
 {
+    extern const char *wine_test_name;
 //  char p[32];
     int status;
     
@@ -68,7 +68,7 @@ main(int argc, char **argv)
         char elapsed[64];
 
         printf( "%04x:%s:%s %u tests executed (%u marked as todo, %u as flaky, %u %s), %u skipped.\n",
-            (unsigned)GetCurrentProcessId(), test_name, winetest_elapsed( elapsed ),
+            (unsigned)GetCurrentProcessId(), wine_test_name, winetest_elapsed( elapsed ),
             (unsigned)(winetest_successes() + winetest_failures() + winetest_flaky_failures() + winetest_todo_successes() + winetest_todo_failures()),
                 (unsigned)winetest_todo_successes(),
                 (unsigned)winetest_flaky_failures(), 
