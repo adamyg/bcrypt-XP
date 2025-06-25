@@ -1,0 +1,92 @@
+name: build
+on: [push]
+jobs:
+  build:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Windows Latest MSVCx86",
+            os: windows-latest,
+            toolchain: vc2022,
+            toolversion: vs170,
+            cmakeprofile: "Visual Studio 17 2022" -A Win32,
+            arch: x86
+          }
+        - {
+            name: "Windows Latest MSVCx64",
+            os: windows-latest,
+            toolchain: vc2022,
+            toolversion: vs170,
+            cmakeprofile: "Visual Studio 17 2022" -A x64,
+            arch: x64
+          }
+        - {
+            name: "Windows Latest MinGWx86",
+            os: windows-latest,
+            toolchain: mingw32,
+            toolversion: mingw32,
+            cmakeprofile: "MinGW Makefiles",
+            arch: x86
+          }
+        - {
+            name: "Windows Latest MinGWx64",
+            os: windows-latest,
+            toolchain: mingw64,
+            toolversion: mingw64,
+            cmakeprofile: "MinGW Makefiles",
+            arch: x64
+          }
+
+    steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: MSVC setup
+      uses: ilammy/msvc-dev-cmd@v1
+      if: contains(matrix.config.name, 'MSVC')
+      with:
+        arch: ${{ matrix.config.arch }}
+
+    - name: MinGW setup
+      if: contains(matrix.config.name, 'MinGW')
+      shell: cmd
+      run: |
+        c:\msys64\usr\bin\pacman --noconfirm -S base-devel
+        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-x86_64-gcc
+        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-x86_64-gnutls
+        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-x86_64-dlfcn
+        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-i686-gcc
+        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-i686-gnutls
+        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-i686-dlfcn
+
+    - name: Generate
+      shell: cmd
+      run: |
+        @if "${{ matrix.config.toolchain }}"=="mingw32" set PATH=c:\msys64\mingw32\bin;%PATH%
+        @if "${{ matrix.config.toolchain }}"=="mingw64" set PATH=c:\msys64\mingw64\bin;%PATH%
+        mkdir build
+        cd build
+        cmake -G ${{ matrix.config.cmakeprofile }} ..
+
+    - name: Compile
+      shell: cmd
+      run: |
+        @if "${{ matrix.config.toolchain }}"=="mingw32" set PATH=c:\msys64\mingw32\bin;%PATH%
+        @if "${{ matrix.config.toolchain }}"=="mingw64" set PATH=c:\msys64\mingw64\bin;%PATH%
+        @if "${{ matrix.config.toolchain }}"=="vc2022"  set PATH=%PATH%;c:\msys64\mingw64\bin
+        cmake --build build
+
+    - name: Package
+      uses: actions/upload-artifact@v4
+      with:
+        name: package-${{ matrix.config.toolversion }}
+        path: |
+          build/*.dll*
+          build/*.exe
+
+
