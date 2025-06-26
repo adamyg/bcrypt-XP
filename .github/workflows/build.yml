@@ -15,6 +15,7 @@ jobs:
             packagesuffix: vs170,
             cmakeprofile: "\"Visual Studio 17 2022\" -A Win32",
             cmakebuild: "--config RelWithDebInfo",
+            bindir: "build/RelWithDebInfo",
             arch: x86
           }
         - {
@@ -24,6 +25,7 @@ jobs:
             packagesuffix: vs170x64,
             cmakeprofile: "\"Visual Studio 17 2022\" -A x64",
             cmakebuild: "--config RelWithDebInfo",
+            bindir: "build/RelWithDebInfo",
             arch: x64
           }
         - {
@@ -33,6 +35,7 @@ jobs:
             packagesuffix: mingw32,
             cmakeprofile: "\"MinGW Makefiles\" -DCMAKE_BUILD_TYPE=Release",
             cmakebuild: "",
+            bindir: "build",
             arch: x86
           }
         - {
@@ -42,6 +45,7 @@ jobs:
             packagesuffix: mingw64,
             cmakeprofile: "\"MinGW Makefiles\" -DCMAKE_BUILD_TYPE=Release",
             cmakebuild: "",
+            bindir: "build",
             arch: x64
           }
 
@@ -56,17 +60,31 @@ jobs:
       with:
         arch: ${{ matrix.config.arch }}
 
-    - name: MinGW setup
-      if: contains(matrix.config.name, 'MinGW')
+    - name: MSVC-MinGW setup
+      if: contains(matrix.config.name, 'MSVC')
+      shell: cmd
+      run: |
+        c:\msys64\usr\bin\pacman --noconfirm -S zip
+
+    - name: MinGWx86 setup
+      if: contains(matrix.config.name, 'MinGWx86')
+      shell: cmd
+      run: |
+        c:\msys64\usr\bin\pacman --noconfirm -S base-devel
+        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-i686-gcc
+        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-i686-gnutls
+        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-i686-dlfcn
+        c:\msys64\usr\bin\pacman --noconfirm -S zip
+        
+    - name: MinGWx64 setup
+      if: contains(matrix.config.name, 'MinGWx64')
       shell: cmd
       run: |
         c:\msys64\usr\bin\pacman --noconfirm -S base-devel
         c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-x86_64-gcc
         c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-x86_64-gnutls
         c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-x86_64-dlfcn
-        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-i686-gcc
-        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-i686-gnutls
-        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-i686-dlfcn
+        c:\msys64\usr\bin\pacman --noconfirm -S zip
 
     - name: Generate
       shell: cmd
@@ -84,28 +102,31 @@ jobs:
         @if "${{ matrix.config.toolchain }}"=="mingw64" set PATH=c:\msys64\mingw64\bin;%PATH%
         @if "${{ matrix.config.toolchain }}"=="vc2022"  set PATH=%PATH%;c:\msys64\mingw64\bin
         cmake --build build ${{ matrix.config.cmakebuild }}
+        c:\msys64\usr\bin\zip bcryptxp-${{ matrix.config.packagesuffix }}-${{ github.run_number }}.zip &
+                ${{ matrix.config.bindir }}/*.exe &
+                ${{ matrix.config.bindir }}/*.dll &
+                ${{ matrix.config.bindir }}/*.lib &
+                ${{ matrix.config.bindir }}/*.a   &
+                ${{ matrix.config.bindir }}/*.map &
+                ${{ matrix.config.bindir }}/*.pdb
 
-    - name: MingGW Package
+    - name: Package
       uses: actions/upload-artifact@v4
-      if: contains(matrix.config.name, 'MinGW')
       with:
-        name: package-${{ matrix.config.packagesuffix }}
+        name: pkg-${{ matrix.config.packagesuffix }}-${{ github.run_number }}
         path: |
-          build/*.exe
-          build/*.dll
-          build/*.a
-
-    - name: MSVC Package
-      uses: actions/upload-artifact@v4
-      if: contains(matrix.config.name, 'MSVC')
+          ${{ matrix.config.bindir }}/*.exe
+          ${{ matrix.config.bindir }}/*.dll
+          ${{ matrix.config.bindir }}/*.lib
+          ${{ matrix.config.bindir }}/*.a
+          ${{ matrix.config.bindir }}/*.map
+          ${{ matrix.config.bindir }}/*.pdb
+          
+    - name: Release
+      uses: softprops/action-gh-release@v2
       with:
-        name: package-${{ matrix.config.packagesuffix }}
-        path: |
-          build/RelWithDebInfo/*.exe
-          build/RelWithDebInfo/*.dll
-          build/RelWithDebInfo/*.lib
-          build/RelWithDebInfo/*.map
-          build/RelWithDebInfo/*.pdb
+        files: bcryptxp-${{ matrix.config.packagesuffix }}-${{ github.run_number }}.zip
+        draft: true
 
 #end
 
