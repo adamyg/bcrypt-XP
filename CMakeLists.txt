@@ -1,4 +1,4 @@
-#
+##
 # CMake Application Build Manifest
 #
 # Copyright (c) 2025, Adam Young.
@@ -39,14 +39,15 @@ project("busybox-xp" LANGUAGES C CXX)
 
 add_definitions(-D_WINDLL -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x501)
 
-#message(STATUS "CMAKE_C_COMPILER_ID=${CMAKE_C_COMPILER_ID}")
-#message(STATUS "CMAKE_CXX_COMPILER_ID=${CMAKE_CXX_COMPILER_ID}")
-#message(STATUS "CMAKE_WATCOM_VERSION=${_CMAKE_WATCOM_VERSION}")
+message("-- C Compiler: ${CMAKE_C_COMPILER_ID}")
+message("-- C++ Compiler: ${CMAKE_CXX_COMPILER_ID}")
+message("-- Generated with config types: ${CMAKE_CONFIGURATION_TYPES}")
 
 if(MSVC)
         add_definitions(-D_CRT_SECURE_NO_WARNINGS)
         set(CMAKE_CXX_STANDARD 17)
 elseif(CMAKE_C_COMPILER_ID STREQUAL OpenWatcom)
+        message("-- Watcom Version: ${_CMAKE_WATCOM_VERSION}")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -za99")
 endif()
 

@@ -12,32 +12,36 @@ jobs:
             name: "Windows Latest MSVCx86",
             os: windows-latest,
             toolchain: vc2022,
-            toolversion: vs170,
+            packagesuffix: vs170,
             cmakeprofile: "\"Visual Studio 17 2022\" -A Win32",
+            cmakebuild: "--config RelWithDebInfo",
             arch: x86
           }
         - {
             name: "Windows Latest MSVCx64",
             os: windows-latest,
             toolchain: vc2022,
-            toolversion: vs170,
+            packagesuffix: vs170x64,
             cmakeprofile: "\"Visual Studio 17 2022\" -A x64",
+            cmakebuild: "--config RelWithDebInfo",
             arch: x64
           }
         - {
             name: "Windows Latest MinGWx86",
             os: windows-latest,
             toolchain: mingw32,
-            toolversion: mingw32,
-            cmakeprofile: "\"MinGW Makefiles\"",
+            packagesuffix: mingw32,
+            cmakeprofile: "\"MinGW Makefiles\" -DCMAKE_BUILD_TYPE=Release",
+            cmakebuild: "",
             arch: x86
           }
         - {
             name: "Windows Latest MinGWx64",
             os: windows-latest,
             toolchain: mingw64,
-            toolversion: mingw64,
-            cmakeprofile: "\"MinGW Makefiles\"",
+            packagesuffix: mingw64,
+            cmakeprofile: "\"MinGW Makefiles\" -DCMAKE_BUILD_TYPE=Release",
+            cmakebuild: "",
             arch: x64
           }
 
@@ -79,29 +83,30 @@ jobs:
         @if "${{ matrix.config.toolchain }}"=="mingw32" set PATH=c:\msys64\mingw32\bin;%PATH%
         @if "${{ matrix.config.toolchain }}"=="mingw64" set PATH=c:\msys64\mingw64\bin;%PATH%
         @if "${{ matrix.config.toolchain }}"=="vc2022"  set PATH=%PATH%;c:\msys64\mingw64\bin
-        cmake --build build
+        cmake --build build ${{ matrix.config.cmakebuild }}
 
     - name: MingGW Package
       uses: actions/upload-artifact@v4
       if: contains(matrix.config.name, 'MinGW')
       with:
-        name: package-${{ matrix.config.toolversion }}
+        name: package-${{ matrix.config.packagesuffix }}
         path: |
           build/*.exe
           build/*.dll
           build/*.a
-          
+
     - name: MSVC Package
       uses: actions/upload-artifact@v4
       if: contains(matrix.config.name, 'MSVC')
       with:
-        name: package-${{ matrix.config.toolversion }}
+        name: package-${{ matrix.config.packagesuffix }}
         path: |
-          build/Debug/*.exe
-          build/Debug/*.dll
-          build/Debug/*.lib
-          build/Debug/*.map
-          build/Debug/*.pdb
+          build/RelWithDebInfo/*.exe
+          build/RelWithDebInfo/*.dll
+          build/RelWithDebInfo/*.lib
+          build/RelWithDebInfo/*.map
+          build/RelWithDebInfo/*.pdb
 
-#end          
-          
+#end
+
+
