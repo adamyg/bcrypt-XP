@@ -1,6 +1,12 @@
 # Prerequisites
 *.d
 
+# Working
+build_*/
+sav/
+*.sav
+*.bat
+
 # Compiled Object files
 *.slo
 *.lo

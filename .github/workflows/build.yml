@@ -1,0 +1,133 @@
+name: build
+on: [push]
+jobs:
+  build:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Windows Latest MSVCx86",
+            os: windows-latest,
+            toolchain: vc2022,
+            packagesuffix: vs170,
+            cmakeprofile: "\"Visual Studio 17 2022\" -A Win32",
+            cmakebuild: "--config RelWithDebInfo",
+            bindir: "build/RelWithDebInfo",
+            arch: x86
+          }
+        - {
+            name: "Windows Latest MSVCx64",
+            os: windows-latest,
+            toolchain: vc2022,
+            packagesuffix: vs170x64,
+            cmakeprofile: "\"Visual Studio 17 2022\" -A x64",
+            cmakebuild: "--config RelWithDebInfo",
+            bindir: "build/RelWithDebInfo",
+            arch: x64
+          }
+        - {
+            name: "Windows Latest MinGWx86",
+            os: windows-latest,
+            toolchain: mingw32,
+            packagesuffix: mingw32,
+            cmakeprofile: "\"MinGW Makefiles\" -DCMAKE_BUILD_TYPE=Release",
+            cmakebuild: "",
+            bindir: "build",
+            arch: x86
+          }
+        - {
+            name: "Windows Latest MinGWx64",
+            os: windows-latest,
+            toolchain: mingw64,
+            packagesuffix: mingw64,
+            cmakeprofile: "\"MinGW Makefiles\" -DCMAKE_BUILD_TYPE=Release",
+            cmakebuild: "",
+            bindir: "build",
+            arch: x64
+          }
+
+    steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: MSVC setup
+      uses: ilammy/msvc-dev-cmd@v1
+      if: contains(matrix.config.name, 'MSVC')
+      with:
+        arch: ${{ matrix.config.arch }}
+
+    - name: MSVC-MinGW setup
+      if: contains(matrix.config.name, 'MSVC')
+      shell: cmd
+      run: |
+        c:\msys64\usr\bin\pacman --noconfirm -S zip
+
+    - name: MinGWx86 setup
+      if: contains(matrix.config.name, 'MinGWx86')
+      shell: cmd
+      run: |
+        c:\msys64\usr\bin\pacman --noconfirm -S base-devel
+        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-i686-gcc
+        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-i686-gnutls
+        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-i686-dlfcn
+        c:\msys64\usr\bin\pacman --noconfirm -S zip
+        
+    - name: MinGWx64 setup
+      if: contains(matrix.config.name, 'MinGWx64')
+      shell: cmd
+      run: |
+        c:\msys64\usr\bin\pacman --noconfirm -S base-devel
+        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-x86_64-gcc
+        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-x86_64-gnutls
+        c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-x86_64-dlfcn
+        c:\msys64\usr\bin\pacman --noconfirm -S zip
+
+    - name: Generate
+      shell: cmd
+      run: |
+        @if "${{ matrix.config.toolchain }}"=="mingw32" set PATH=c:\msys64\mingw32\bin;%PATH%
+        @if "${{ matrix.config.toolchain }}"=="mingw64" set PATH=c:\msys64\mingw64\bin;%PATH%
+        mkdir build
+        cd build
+        cmake -G ${{ matrix.config.cmakeprofile }} ..
+
+    - name: Compile
+      shell: cmd
+      run: |
+        @if "${{ matrix.config.toolchain }}"=="mingw32" set PATH=c:\msys64\mingw32\bin;%PATH%
+        @if "${{ matrix.config.toolchain }}"=="mingw64" set PATH=c:\msys64\mingw64\bin;%PATH%
+        @if "${{ matrix.config.toolchain }}"=="vc2022"  set PATH=%PATH%;c:\msys64\mingw64\bin
+        cmake --build build ${{ matrix.config.cmakebuild }}
+        c:\msys64\usr\bin\zip bcryptxp-${{ matrix.config.packagesuffix }}-build${{ github.run_number }}.zip ^
+                ${{ matrix.config.bindir }}/*.exe ^
+                ${{ matrix.config.bindir }}/*.dll ^
+                ${{ matrix.config.bindir }}/*.lib ^
+                ${{ matrix.config.bindir }}/*.a   ^
+                ${{ matrix.config.bindir }}/*.map ^
+                ${{ matrix.config.bindir }}/*.pdb
+
+    - name: Package
+      uses: actions/upload-artifact@v4
+      with:
+        name: pkg-${{ matrix.config.packagesuffix }}-build${{ github.run_number }}
+        path: |
+          ${{ matrix.config.bindir }}/*.exe
+          ${{ matrix.config.bindir }}/*.dll
+          ${{ matrix.config.bindir }}/*.lib
+          ${{ matrix.config.bindir }}/*.a
+          ${{ matrix.config.bindir }}/*.map
+          ${{ matrix.config.bindir }}/*.pdb
+          
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: bcryptxp-${{ matrix.config.packagesuffix }}-build${{ github.run_number }}.zip
+        draft: true
+
+#end
+
+
