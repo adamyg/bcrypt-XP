@@ -102,12 +102,12 @@ jobs:
         @if "${{ matrix.config.toolchain }}"=="mingw64" set PATH=c:\msys64\mingw64\bin;%PATH%
         @if "${{ matrix.config.toolchain }}"=="vc2022"  set PATH=%PATH%;c:\msys64\mingw64\bin
         cmake --build build ${{ matrix.config.cmakebuild }}
-        c:\msys64\usr\bin\zip bcryptxp-${{ matrix.config.packagesuffix }}-${{ github.run_number }}.zip &
-                ${{ matrix.config.bindir }}/*.exe &
-                ${{ matrix.config.bindir }}/*.dll &
-                ${{ matrix.config.bindir }}/*.lib &
-                ${{ matrix.config.bindir }}/*.a   &
-                ${{ matrix.config.bindir }}/*.map &
+        c:\msys64\usr\bin\zip bcryptxp-${{ matrix.config.packagesuffix }}-${{ github.run_number }}.zip \
+                ${{ matrix.config.bindir }}/*.exe \
+                ${{ matrix.config.bindir }}/*.dll \
+                ${{ matrix.config.bindir }}/*.lib \
+                ${{ matrix.config.bindir }}/*.a   \
+                ${{ matrix.config.bindir }}/*.map \
                 ${{ matrix.config.bindir }}/*.pdb
 
     - name: Package
